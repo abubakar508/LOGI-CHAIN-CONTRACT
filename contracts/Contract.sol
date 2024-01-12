@@ -30,15 +30,21 @@ contract LogisticsContract {
 
 // allows an externla caller to send a package to a different address(a recipient): takes recepient as an argument
     function sendPackage(address _recipient) external {
-        uint256 newPackageId = packageCount++;
-        Package storage newPackage = packages[newPackageId];
-        
-        newPackage.sender = msg.sender;
-        newPackage.recipient = _recipient;
-        newPackage.status = PackageStatus.Pending;
-        
-        emit PackageSent(newPackageId, msg.sender, _recipient);
-    }
+    uint256 newPackageId = packageCount++;
+    
+    Package storage newPackage = packages[newPackageId];
+    
+    newPackage = Package({
+        sender: msg.sender,
+        carrier: address(0),  // Initialize carrier to address(0)
+        recipient: _recipient,
+        packageId: newPackageId,
+        status: PackageStatus.Pending
+    });
+
+    emit PackageSent(newPackageId, msg.sender, _recipient);
+}
+
 
 
 // allows the sender, recipient, or assigned carrier to update the status of a package.
@@ -55,9 +61,12 @@ contract LogisticsContract {
 
 // allows the sender to assign a carrier for a package. 
     function assignCarrier(uint256 _packageId, address _carrier) external {
-        Package storage package = packages[_packageId];
-        require(package.sender == msg.sender, "Only sender can assign a carrier");
+    Package storage package = packages[_packageId];
+    require(package.sender == msg.sender, "Only sender can assign a carrier");
 
-        package.carrier = _carrier;
-    }
+    package.carrier = _carrier;
+
+    // Emit an event for carrier assignment
+    emit PackageStatusChanged(_packageId, package.status);
+}
 }
